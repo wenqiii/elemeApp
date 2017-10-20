@@ -1,14 +1,31 @@
+Skip to content
+This repository
+Search
+Pull requests
+Issues
+Marketplace
+Explore
+ @wenqiii
+ Sign out
+ Watch 8
+  Star 73  Fork 30 cccyb/vue-eleme-app
+ Code  Issues 0  Pull requests 0  Projects 0  Wiki  Insights
+Branch: master Find file Copy pathvue-eleme-app/src/components/goods/goods.vue
+88c78ff  on 6 Apr
+@cccyb cccyb 将数据请求改成本地静态数据
+1 contributor
+RawBlameHistory     
+Executable File  282 lines (272 sloc)  7.69 KB
 <template>
   <div>
     <div class="goods">
-      <!-- vue 少dom操作 this.refs.menuWrapper -->
       <div class="menu-wrapper" ref="menuWrapper">
         <ul>
-          <li v-for="(item, index) in goods" class="menu-item" :class="{'current':currentIndex===index}" @click="selectMenu(index, $event)" :key="index"">
-            <span class="text border-1px">
-              <span v-show="item.type>0" class="icon" :class="classMap[item.type]"></span>
-              {{item.name}}
-            </span>
+          <li v-for="(item,index) in goods" class="menu-item" :class="{'current':currentIndex===index}"
+              @click="selectMenu(index,$event)">
+          <span class="text border-1px">
+            <span v-show="item.type>0" class="icon" :class="classMap[item.type]"></span>{{item.name}}
+          </span>
           </li>
         </ul>
       </div>
@@ -17,25 +34,22 @@
           <li v-for="item in goods" class="food-list" ref="foodList">
             <h1 class="title">{{item.name}}</h1>
             <ul>
-              <li @click="selectedFood(food,$event)" v-for="food in item.foods" class="food-item border-1px">
+              <li @click="selectFood(food,$event)" v-for="food in item.foods" class="food-item border-1px">
                 <div class="icon">
-                  <img :src="food.icon" width="57" height="57">
+                  <img width="57" height="57" :src="food.icon">
                 </div>
                 <div class="content">
                   <h2 class="name">{{food.name}}</h2>
                   <p class="desc">{{food.description}}</p>
                   <div class="extra">
-                    <span class="count">月售 {{food.sellCount}}份
-                    </span>
-                    <span>好评率{{food.rating}}</span>
+                    <span class="count">月售{{food.sellCount}}份</span><span>好评率{{food.rating}}%</span>
                   </div>
                   <div class="price">
-                    <span class="now">{{food.price}}</span>
-                    <span class="old" v-show="food.oldPrice">{{food.oldPrice}}</span>
+                    <span class="now">￥{{food.price}}</span><span class="old"
+                                                                  v-show="food.oldPrice">￥{{food.oldPrice}}</span>
                   </div>
                   <div class="cartcontrol-wrapper">
-                    <cartcontrol @add="addFood" :food="food">
-                    </cartcontrol>
+                    <cartcontrol @add="addFood" :food="food"></cartcontrol>
                   </div>
                 </div>
               </li>
@@ -44,121 +58,134 @@
         </ul>
       </div>
       <shopcart ref="shopcart" :selectFoods="selectFoods" :deliveryPrice="seller.deliveryPrice"
-      :minPrice="seller.minPrice">
-      </shopcart>
+                :minPrice="seller.minPrice"></shopcart>
     </div>
-    <food :food="selectedfood" ref="food"></food>
+    <food @add="addFood" :food="selectedFood" ref="food"></food>
   </div>
 </template>
-<script>
-import food from '@/components/food/food'
-import shopcart from '@/components/shopcart/shopcart'
-import cartcontrol from '@/components/cartcontrol/cartcontrol'
-import BScroll from 'better-scroll'
 
-const response =
-  require('../../common/data/goods.json')
-export default {
-  props: {
-    seller: {
-      type: Object
-    }
-  },
-  mounted() {
-    console.log(this.$refs.menuWrapper)
-  },
-  data() {
-    return {
-      goods: [],
-      listHeight: [],
-      scrollY: 0,
-      selectedfood: {}
-    }
-  },
-  methods: {
-    selectMenu(index, event) {
-      // 左边的menu，如何驱动右边的foods进行滚动
-      // index -> listHeight [index]
-      let foodList = this.$refs.foodList
-      let el = foodList[index]
-      this.foodsScroll.scrollToElement(el, 300)
+<script>
+  import BScroll from 'better-scroll';
+  import shopcart from '../shopcart/shopcart.vue';
+  import cartcontrol from '../cartcontrol/cartcontrol';
+  import food from '../food/food';
+  const response = require('../../common/data/goods.json');
+  const ERR_OK = 0;
+  export default {
+    props: {
+      seller: {
+        type: Object
+      }
     },
-    selectedFood (food,event) {
-      this.selectedfood = food
-      this.$refs.food.show()
+    data() {
+      return {
+        goods: [],
+        listHeight: [],
+        scrollY: 0,
+        selectedFood: {}
+      };
     },
-    addFood(target) {
-      this._drop(target)
+    computed: {
+      currentIndex() {
+        for (let i = 0; i < this.listHeight.length; i++) {
+          let height1 = this.listHeight[i];
+          let height2 = this.listHeight[i + 1];
+          if (!height2 || (this.scrollY >= height1 && this.scrollY < height2)) {
+            return i;
+          }
+        }
+        return 0;
+      },
+      selectFoods() {
+        let foods = [];
+        this.goods.forEach((good) => {
+          good.foods.forEach((food) => {
+            if (food.count) {
+              foods.push(food);
+            }
+          });
+        });
+        return foods;
+      }
     },
-    _drop (target) {
-      this.$nextTick(() => {
-        this.$refs.shopcart.drop(target)
-      })
+    created() {
+      this.classMap = ['decrease', 'discount', 'special', 'invoice', 'guarantee'];
+      // this.$http.get('/api/goods').then((response) => {
+      //   response = response.body;
+      //   if (response.errno === ERR_OK) {
+      //     this.goods = response.data;
+      //     this.$nextTick(() => {
+      //       this._initScroll();
+      //       this._calculateHeight();
+      //     });
+      //   }
+      // });
+      if (response.errno === ERR_OK) {
+        this.goods = response.data;
+        this.$nextTick(() => {
+          this._initScroll();
+          this._calculateHeight();
+        });
+      }
     },
-    _initScroll() {
-      this.menuScroll =
-        new BScroll(this.$refs.menuWrapper, {
+    methods: {
+      selectMenu(index, event) {
+        if (!event._constructed) {
+          return;
+        }
+        let foodList = this.$refs.foodList;
+        let el = foodList[index];
+        this.foodsScroll.scrollToElement(el, 300);
+      },
+      selectFood(food, event) {
+        if (!event._constructed) {
+          return;
+        }
+        this.selectedFood = food;
+        this.$refs.food.show();
+      },
+      addFood(target) {
+        this._drop(target);
+      },
+      _drop(target) {
+        // 体验优化,异步执行下落动画
+        this.$nextTick(() => {
+          this.$refs.shopcart.drop(target);
+        });
+      },
+      _initScroll() {
+        this.meunScroll = new BScroll(this.$refs.menuWrapper, {
           click: true
-        })
-      this.foodsScroll = new BScroll(
-        this.$refs.foodsWrapper, {
+        });
+        this.foodsScroll = new BScroll(this.$refs.foodsWrapper, {
           click: true,
           probeType: 3
-        })
-
-      this.foodsScroll.on('scroll', (pos) => {
-        this.scrollY = Math.abs(Math.round(pos.y))
-      })
-    },
-    _calculateHeight() {
-      let foodList = this.$refs.foodList
-      let height = 0
-      this.listHeight.push(height)
-      for (let i = 0; i < foodList.length; i++) {
-        let item = foodList[i]
-        height += item.clientHeight
-        this.listHeight.push(height)
+        });
+        this.foodsScroll.on('scroll', (pos) => {
+          this.scrollY = Math.abs(Math.round(pos.y));
+        });
+      },
+      _calculateHeight() {
+        let foodList = this.$refs.foodList;
+        let height = 0;
+        this.listHeight.push(height);
+        for (let i = 0; i < foodList.length; i++) {
+          let item = foodList[i];
+          height += item.clientHeight;
+          this.listHeight.push(height);
+        }
       }
-      console.log(this.listHeight)
-    }
-  },
-  computed: {
-    currentIndex() {
-      return 0
     },
-    selectFoods () {
-      let foods = []
-      this.goods.forEach(good => {
-        good.foods.forEach(food => {
-          if (food.count) {
-            foods.push(food)
-          }
-        })
-      })
-      return foods
+    components: {
+      shopcart,
+      cartcontrol,
+      food
     }
-  },
-  created() {
-    this.classMap = ['decrease', 'discount',
-      'special', 'invoice', 'guarantee']
-    this.goods = response.data
-    // this.goods 将会翻江倒海  很消耗性能 时间
-    // 上一次更新这后， 再做 
-    this.$nextTick(() => {
-      this._initScroll()
-      this._calculateHeight()
-    })
-  },
-  components: {
-    food,
-    shopcart,
-    cartcontrol
-  }
-}
+  };
 </script>
 
-<style lang="stylus" type="stylesheet/stylus">
-@import "../../common/stylus/mixin.styl"
+<style lang="stylus" rel="stylesheet/stylus">
+  @import "../../common/stylus/mixin.styl"
   .goods
     display: flex
     position: absolute
