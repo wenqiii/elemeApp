@@ -9,7 +9,7 @@
 > 使用stylus编写样式<br>
 
 ## 在线预览
-(点这开始在线预览)[https://wenqiii.github.io/elemeApp/dist/index.html#/goods]
+[点这开始在线预览](https://wenqiii.github.io/elemeApp/dist/index.html#/goods)
 
 ## 总结
 > 通过这个项目的学习，我了解到router-link的使用方法，通过vue-router官网进行了更加深入的学习，熟悉了vue-router的使用，学会了怎么搭建vue的项目结构，以及学会了如何使用better-scroll这一插件。
